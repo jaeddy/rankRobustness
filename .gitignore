@@ -1,0 +1,5 @@
+# Ignore data
+data/
+packrat/lib*/
+.Rproj.user
+packrat/src/
