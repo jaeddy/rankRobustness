@@ -10,14 +10,24 @@ labelFiles <- grepl("label", fileList$V1)
 gseList <- fileList[!labelFiles, 1]
 gseList <- gsub(".txt", "", gseList)
 
+# create master list of GSM sample IDs
+labelFiles <- fileList[labelFiles, 1]
+
+labelsList <- data.frame(matrix(nrow = 0, ncol = 2))
+colnames(labelsList) <- c("sample", "pheno")
+for (labelFile in labelFiles) {
+    labels_tmp <- read.table(paste0("data/labels/", labelFile), nrows = 2)
+    labelsList <- rbind(labelsList, t(labels_tmp))
+}
+
 # create folder to store processed data sets
 if (!file.exists("data/processed")) {
     dir.create("data/processed")
 }
 
-for (gse_i in gseList) {
+for (gseID in gseList) {
     # download RAW files from GEO ftp
-    gseID <- gseList[gse_i]
+    print(paste("Working on", gseID))
     
     # create a temporary directory to store .CEL files
     if (!file.exists("data/tmp")) {
@@ -53,6 +63,7 @@ for (gse_i in gseList) {
     if (!file.exists(destAddress)) {
         write(gseID, "data/no_raw.txt", append = TRUE)
         warning(paste("No RAW files found for", gseID))
+        next
     }
     
     # untar the downloaded file
@@ -63,8 +74,10 @@ for (gse_i in gseList) {
     affyData <- ReadAffy(celfile.path = celAddress)
     samples <- gsub(".CEL.gz", "", sampleNames(affyData))
     
+    # read CEL files one-by-one
+    
     # normalize expression data using RMA
-    normData <- rma(affydata)
+    normData <- rma(affyData)
     normX <- exprs(normData)
     
     # convert expression data to data.frame object
